@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import './App.css'
+import ReportView from './ReportView'
 import { bmiLabel, calcBmi, EMPTY_PROFILE, type StyleProfile } from './types'
 
 const STORAGE_KEY = 'stylist-profile'
@@ -18,6 +19,9 @@ function App() {
   const [profile, setProfile] = useState<StyleProfile>(loadProfile)
   const [saved, setSaved] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [report, setReport] = useState<string | null>(null)
+  const [consulting, setConsulting] = useState(false)
+  const [consultError, setConsultError] = useState<string | null>(null)
 
   useEffect(() => {
     setSaved(false)
@@ -47,6 +51,35 @@ function App() {
     setProfile(EMPTY_PROFILE)
     localStorage.removeItem(STORAGE_KEY)
     setSaved(false)
+    setReport(null)
+    setConsultError(null)
+  }
+
+  async function handleConsult() {
+    if (!profile.photo || !profile.heightCm || !profile.weightKg) return
+    setConsulting(true)
+    setConsultError(null)
+    setReport(null)
+    try {
+      const res = await fetch('/api/consult', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          photo: profile.photo,
+          heightCm: profile.heightCm,
+          weightKg: profile.weightKg,
+        }),
+      })
+      const data = (await res.json()) as { report?: string; error?: string }
+      if (!res.ok || !data.report) {
+        throw new Error(data.error ?? '보고서를 받지 못했습니다.')
+      }
+      setReport(data.report)
+    } catch (err) {
+      setConsultError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.')
+    } finally {
+      setConsulting(false)
+    }
   }
 
   const bmi =
@@ -147,6 +180,21 @@ function App() {
           </button>
         </div>
       </form>
+
+      <div className="controls consult-controls">
+        <button type="button" onClick={handleConsult} disabled={!isValid || consulting}>
+          {consulting ? 'AI가 분석 중...' : '🧑‍🎨 AI 스타일 컨설팅 받기'}
+        </button>
+      </div>
+
+      {consultError && <div className="consult-error">{consultError}</div>}
+
+      {report && (
+        <div className="report-card">
+          <h2>스타일 컨설팅 보고서</h2>
+          <ReportView markdown={report} />
+        </div>
+      )}
 
       <footer>입력한 정보는 이 기기의 브라우저에만 저장됩니다 🔒</footer>
     </div>
