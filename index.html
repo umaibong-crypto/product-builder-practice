@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로또 번호 추천기</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #facc15;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0f172a, #1e1b4b);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 640px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 28px;
+    font-size: 14px;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: var(--accent);
+    color: #1e1b4b;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(250, 204, 21, 0.25);
+  }
+  button:active {
+    transform: translateY(0);
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid #334155;
+  }
+  .sets {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .set {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    animation: fadeIn 0.4s ease both;
+  }
+  .set .label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    width: 36px;
+    flex-shrink: 0;
+  }
+  .balls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .ball {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: #0f172a;
+    flex-shrink: 0;
+  }
+  /* 로또 공식 번호대별 색상 */
+  .c1 { background: #fbc400; } /* 1-10 */
+  .c2 { background: #69c8f2; } /* 11-20 */
+  .c3 { background: #ff7272; } /* 21-30 */
+  .c4 { background: #aaaaaa; } /* 31-40 */
+  .c5 { background: #b0d840; } /* 41-45 */
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 32px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 480px) {
+    .set { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🎱 로또 번호 추천기</h1>
+    <p class="subtitle">버튼을 누르면 5세트의 번호를 무작위로 추천해드려요 (행운을 빌어요!)</p>
+
+    <div class="controls">
+      <button id="generateBtn">번호 추천받기</button>
+      <button id="clearBtn" class="secondary">초기화</button>
+    </div>
+
+    <div class="sets" id="sets"></div>
+
+    <footer>본 추천은 무작위 생성이며 당첨을 보장하지 않습니다 🍀</footer>
+  </div>
+
+<script>
+  const setsContainer = document.getElementById('sets');
+  const generateBtn = document.getElementById('generateBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  function colorClass(n) {
+    if (n <= 10) return 'c1';
+    if (n <= 20) return 'c2';
+    if (n <= 30) return 'c3';
+    if (n <= 40) return 'c4';
+    return 'c5';
+  }
+
+  function generateOneSet() {
+    const nums = new Set();
+    while (nums.size < 6) {
+      nums.add(Math.floor(Math.random() * 45) + 1);
+    }
+    return Array.from(nums).sort((a, b) => a - b);
+  }
+
+  function render(allSets) {
+    setsContainer.innerHTML = '';
+    allSets.forEach((nums, i) => {
+      const row = document.createElement('div');
+      row.className = 'set';
+      row.style.animationDelay = `${i * 0.06}s`;
+
+      const label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = `${i + 1}세트`;
+      row.appendChild(label);
+
+      const balls = document.createElement('div');
+      balls.className = 'balls';
+      nums.forEach(n => {
+        const ball = document.createElement('div');
+        ball.className = `ball ${colorClass(n)}`;
+        ball.textContent = n;
+        balls.appendChild(ball);
+      });
+      row.appendChild(balls);
+
+      setsContainer.appendChild(row);
+    });
+  }
+
+  function generateAll() {
+    const allSets = Array.from({ length: 5 }, generateOneSet);
+    render(allSets);
+  }
+
+  generateBtn.addEventListener('click', generateAll);
+  clearBtn.addEventListener('click', () => { setsContainer.innerHTML = ''; });
+
+  // 처음 로드 시 바로 한 번 추천
+  generateAll();
+</script>
+</body>
+</html>
